@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Scheduling Algorithm Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.delete {
+            background-color: #e74c3c;
+        }
+
+        button.delete:hover {
+            background-color: #c0392b;
+        }
+
+        button.edit {
+            background-color: #f39c12;
+        }
+
+        button.edit:hover {
+            background-color: #d68910;
+        }
+
+        .process-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .process-table th, .process-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .process-table th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .process-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .gantt-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .gantt-chart {
+            display: flex;
+            align-items: center;
+            min-height: 60px;
+            position: relative;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .gantt-block {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border-right: 1px solid #fff;
+            position: relative;
+        }
+
+        .timeline {
+            display: flex;
+            margin-top: 10px;
+            position: relative;
+            height: 30px;
+        }
+
+        .timeline-mark {
+            position: absolute;
+            bottom: 0;
+            font-size: 12px;
+            transform: translateX(-50%);
+        }
+
+        .slider-container {
+            margin-top: 20px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .metric-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .current-time-indicator {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e74c3c;
+            pointer-events: none;
+            transition: left 0.3s ease;
+        }
+
+        .process-colors {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-legend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CPU Scheduling Algorithm Visualizer</h1>
+
+        <div class="section">
+            <h2>Process Management</h2>
+            <div class="file-controls">
+                <button onclick="saveProcesses()">Save Processes</button>
+                <button onclick="document.getElementById('fileInput').click()">Load Processes</button>
+                <input type="file" id="fileInput" accept=".json" onchange="loadProcesses(event)">
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="processId">Process ID</label>
+                    <input type="text" id="processId" placeholder="P1">
+                </div>
+                <div class="control-group">
+                    <label for="arrivalTime">Arrival Time</label>
+                    <input type="number" id="arrivalTime" min="0" value="0">
+                </div>
+                <div class="control-group">
+                    <label for="burstTime">Burst Time</label>
+                    <input type="number" id="burstTime" min="1" value="1">
+                </div>
+                <div class="control-group">
+                    <label for="priority">Priority</label>
+                    <input type="number" id="priority" min="1" value="1">
+                </div>
+                <button onclick="addProcess()">Add Process</button>
+            </div>
+            <table class="process-table" id="processTable">
+                <thead>
+                    <tr>
+                        <th>Process ID</th>
+                        <th>Arrival Time</th>
+                        <th>Burst Time</th>
+                        <th>Priority</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="processTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Algorithm Selection</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="algorithm">Algorithm</label>
+                    <select id="algorithm" onchange="onAlgorithmChange()">
+                        <option value="fcfs">First Come First Serve (FCFS)</option>
+                        <option value="sjf">Shortest Job First (SJF)</option>
+                        <option value="priority">Priority Scheduling</option>
+                        <option value="rr">Round Robin (RR)</option>
+                    </select>
+                </div>
+                <div class="control-group" id="preemptiveGroup" style="display: none;">
+                    <label>Mode</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="preemptive">
+                        <label for="preemptive">Preemptive</label>
+                    </div>
+                </div>
+                <div class="control-group" id="quantumGroup" style="display: none;">
+                    <label for="quantum">Time Quantum</label>
+                    <input type="number" id="quantum" min="1" value="2">
+                </div>
+                <button onclick="runScheduling()">Run Algorithm</button>
+            </div>
+        </div>
+
+        <div class="section" id="visualizationSection" style="display: none;">
+            <h2>Gantt Chart Visualization</h2>
+            <div class="gantt-container">
+                <div class="gantt-chart" id="ganttChart">
+                    <div class="current-time-indicator" id="timeIndicator"></div>
+                </div>
+                <div class="timeline" id="timeline"></div>
+            </div>
+            <div class="slider-container">
+                <label for="timeSlider">Time: <span id="currentTime">0</span></label>
+                <input type="range" id="timeSlider" class="slider" min="0" max="100" value="0" oninput="updateTimeVisualization(this.value)">
+            </div>
+            <div class="process-colors" id="processColors"></div>
+        </div>
+
+        <div class="section" id="metricsSection" style="display: none;">
+            <h2>Performance Metrics</h2>
+            <div class="metrics" id="metrics"></div>
+            <table class="process-table" id="detailedMetrics">
+                <thead>
+                    <tr>
+                        <th>Process</th>
+                        <th>Arrival Time</th>
+                        <th>Burst Time</th>
+                        <th>Completion Time</th>
+                        <th>Turnaround Time</th>
+                        <th>Waiting Time</th>
+                        <th>Response Time</th>
+                    </tr>
+                </thead>
+                <tbody id="detailedMetricsBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section" id="comparisonSection" style="display: none;">
+            <h2>Algorithm Comparison</h2>
+            <table class="comparison-table" id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Average Waiting Time</th>
+                        <th>Average Turnaround Time</th>
+                        <th>Average Response Time</th>
+                        <th>CPU Utilization (%)</th>
+                        <th>Throughput</th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let processes = [];
+        let schedulingResults = {};
+        let currentSchedule = [];
+        let processColors = {};
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#d35400'];
+
+        function generateProcessColor(processId) {
+            if (!processColors[processId]) {
+                const index = Object.keys(processColors).length % colors.length;
+                processColors[processId] = colors[index];
+            }
+            return processColors[processId];
+        }
+
+        function addProcess() {
+            const processId = document.getElementById('processId').value || `P${processes.length + 1}`;
+            const arrivalTime = parseInt(document.getElementById('arrivalTime').value) || 0;
+            const burstTime = parseInt(document.getElementById('burstTime').value) || 1;
+            const priority = parseInt(document.getElementById('priority').value) || 1;
+
+            const process = {
+                id: processId,
+                arrivalTime: arrivalTime,
+                burstTime: burstTime,
+                priority: priority,
+                remainingTime: burstTime
+            };
+
+            processes.push(process);
+            updateProcessTable();
+            clearInputs();
+        }
+
+        function clearInputs() {
+            document.getElementById('processId').value = '';
+            document.getElementById('arrivalTime').value = '0';
+            document.getElementById('burstTime').value = '1';
+            document.getElementById('priority').value = '1';
+        }
+
+        function updateProcessTable() {
+            const tbody = document.getElementById('processTableBody');
+            tbody.innerHTML = '';
+
+            processes.forEach((process, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${process.id}</td>
+                    <td>${process.arrivalTime}</td>
+                    <td>${process.burstTime}</td>
+                    <td>${process.priority}</td>
+                    <td>
+                        <button class="edit" onclick="editProcess(${index})">Edit</button>
+                        <button class="delete" onclick="deleteProcess(${index})">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        function editProcess(index) {
+            const process = processes[index];
+            document.getElementById('processId').value = process.id;
+            document.getElementById('arrivalTime').value = process.arrivalTime;
+            document.getElementById('burstTime').value = process.burstTime;
+            document.getElementById('priority').value = process.priority;
+            deleteProcess(index);
+        }
+
+        function deleteProcess(index) {
+            processes.splice(index, 1);
+            updateProcessTable();
+        }
+
+        function onAlgorithmChange() {
+            const algorithm = document.getElementById('algorithm').value;
+            const preemptiveGroup = document.getElementById('preemptiveGroup');
+            const quantumGroup = document.getElementById('quantumGroup');
+
+            if (algorithm === 'sjf' || algorithm === 'priority') {
+                preemptiveGroup.style.display = 'block';
+            } else {
+                                preemptiveGroup.style.display = 'none';
+            }
+
+            if (algorithm === 'rr') {
+                quantumGroup.style.display = 'block';
+            } else {
+                quantumGroup.style.display = 'none';
+            }
+        }
+
+        function runScheduling() {
+            if (processes.length === 0) {
+                alert('Please add at least one process');
+                return;
+            }
+
+            const algorithm = document.getElementById('algorithm').value;
+            const isPreemptive = document.getElementById('preemptive').checked;
+            const quantum = parseInt(document.getElementById('quantum').value) || 2;
+
+            // Reset process colors
+            processColors = {};
+            processes.forEach(p => generateProcessColor(p.id));
+
+            // Run selected algorithm
+            switch (algorithm) {
+                case 'fcfs':
+                    currentSchedule = fcfs([...processes]);
+                    break;
+                case 'sjf':
+                    currentSchedule = isPreemptive ? sjfPreemptive([...processes]) : sjfNonPreemptive([...processes]);
+                    break;
+                case 'priority':
+                    currentSchedule = isPreemptive ? priorityPreemptive([...processes]) : priorityNonPreemptive([...processes]);
+                    break;
+                case 'rr':
+                    currentSchedule = roundRobin([...processes], quantum);
+                    break;
+            }
+
+            // Calculate metrics
+            const metrics = calculateMetrics(currentSchedule, [...processes]);
+            displayResults(currentSchedule, metrics);
+
+            // Run all algorithms for comparison
+            runAllAlgorithms();
+        }
+
+        function fcfs(processList) {
+            const schedule = [];
+            let currentTime = 0;
+            
+            // Sort by arrival time
+            processList.sort((a, b) => a.arrivalTime - b.arrivalTime);
+
+            for (const process of processList) {
+                if (currentTime < process.arrivalTime) {
+                    currentTime = process.arrivalTime;
+                }
+                
+                schedule.push({
+                    processId: process.id,
+                    startTime: currentTime,
+                    endTime: currentTime + process.burstTime
+                });
+                
+                currentTime += process.burstTime;
+            }
+
+            return schedule;
+        }
+
+        function sjfNonPreemptive(processList) {
+            const schedule = [];
+            let currentTime = 0;
+            const remaining = [...processList];
+
+            while (remaining.length > 0) {
+                // Get available processes
+                const available = remaining.filter(p => p.arrivalTime <= currentTime);
+                
+                if (available.length === 0) {
+                    currentTime = Math.min(...remaining.map(p => p.arrivalTime));
+                    continue;
+                }
+
+                // Select shortest job
+                available.sort((a, b) => a.burstTime - b.burstTime);
+                const selected = available[0];
+                
+                schedule.push({
+                    processId: selected.id,
+                    startTime: currentTime,
+                    endTime: currentTime + selected.burstTime
+                });
+                
+                currentTime += selected.burstTime;
+                remaining.splice(remaining.indexOf(selected), 1);
+            }
+
+            return schedule;
+        }
+
+        function sjfPreemptive(processList) {
+            const schedule = [];
+            let currentTime = 0;
+            const processes = processList.map(p => ({...p, remainingTime: p.burstTime}));
+            const completed = [];
+
+            while (completed.length < processes.length) {
+                // Get available processes
+                const available = processes.filter(p => 
+                    p.arrivalTime <= currentTime && !completed.includes(p.id)
+                );
+
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                // Select shortest remaining time
+                available.sort((a, b) => a.remainingTime - b.remainingTime);
+                const selected = available[0];
+
+                // Check if this is a new process or continuation
+                const lastEntry = schedule[schedule.length - 1];
+                if (lastEntry && lastEntry.processId === selected.id && lastEntry.endTime === currentTime) {
+                    lastEntry.endTime++;
+                } else {
+                    schedule.push({
+                        processId: selected.id,
+                        startTime: currentTime,
+                        endTime: currentTime + 1
+                    });
+                }
+
+                selected.remainingTime--;
+                currentTime++;
+
+                if (selected.remainingTime === 0) {
+                    completed.push(selected.id);
+                }
+            }
+
+            return schedule;
+        }
+
+        function priorityNonPreemptive(processList) {
+            const schedule = [];
+            let currentTime = 0;
+            const remaining = [...processList];
+
+            while (remaining.length > 0) {
+                const available = remaining.filter(p => p.arrivalTime <= currentTime);
+                
+                if (available.length === 0) {
+                    currentTime = Math.min(...remaining.map(p => p.arrivalTime));
+                    continue;
+                }
+
+                // Select highest priority (lower number = higher priority)
+                available.sort((a, b) => a.priority - b.priority);
+                const selected = available[0];
+                
+                schedule.push({
+                    processId: selected.id,
+                    startTime: currentTime,
+                    endTime: currentTime + selected.burstTime
+                });
+                
+                currentTime += selected.burstTime;
+                remaining.splice(remaining.indexOf(selected), 1);
+            }
+
+            return schedule;
+        }
+
+        function priorityPreemptive(processList) {
+            const schedule = [];
+            let currentTime = 0;
+            const processes = processList.map(p => ({...p, remainingTime: p.burstTime}));
+            const completed = [];
+
+            while (completed.length < processes.length) {
+                const available = processes.filter(p => 
+                    p.arrivalTime <= currentTime && !completed.includes(p.id)
+                );
+
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                // Select highest priority
+                available.sort((a, b) => a.priority - b.priority);
+                const selected = available[0];
+
+                const lastEntry = schedule[schedule.length - 1];
+                if (lastEntry && lastEntry.processId === selected.id && lastEntry.endTime === currentTime) {
+                    lastEntry.endTime++;
+                } else {
+                    schedule.push({
+                        processId: selected.id,
+                        startTime: currentTime,
+                        endTime: currentTime + 1
+                    });
+                }
+
+                selected.remainingTime--;
+                currentTime++;
+
+                if (selected.remainingTime === 0) {
+                    completed.push(selected.id);
+                }
+            }
+
+            return schedule;
+        }
+
+        function roundRobin(processList, quantum) {
+            const schedule = [];
+            let currentTime = 0;
+            const queue = [];
+            const processes = processList.map(p => ({...p, remainingTime: p.burstTime}));
+            const arrived = new Set();
+
+            // Add initial processes
+            processes.forEach(p => {
+                if (p.arrivalTime === 0) {
+                    queue.push(p);
+                    arrived.add(p.id);
+                }
+            });
+
+            while (queue.length > 0 || arrived.size < processes.length) {
+                if (queue.length === 0) {
+                    currentTime++;
+                    // Check for new arrivals
+                    processes.forEach(p => {
+                        if (p.arrivalTime === currentTime && !arrived.has(p.id)) {
+                            queue.push(p);
+                            arrived.add(p.id);
+                        }
+                    });
+                    continue;
+                }
+
+                const current = queue.shift();
+                const executeTime = Math.min(quantum, current.remainingTime);
+
+                schedule.push({
+                    processId: current.id,
+                    startTime: currentTime,
+                    endTime: currentTime + executeTime
+                });
+
+                current.remainingTime -= executeTime;
+                currentTime += executeTime;
+
+                // Check for new arrivals during execution
+                processes.forEach(p => {
+                    if (p.arrivalTime > currentTime - executeTime && 
+                        p.arrivalTime <= currentTime && 
+                        !arrived.has(p.id)) {
+                        queue.push(p);
+                        arrived.add(p.id);
+                    }
+                });
+
+                // Re-add current process if not completed
+                if (current.remainingTime > 0) {
+                    queue.push(current);
+                }
+            }
+
+            return schedule;
+        }
+
+        function calculateMetrics(schedule, processList) {
+            const metrics = {};
+            const processMetrics = {};
+
+            // Initialize metrics for each process
+            processList.forEach(p => {
+                processMetrics[p.id] = {
+                    arrivalTime: p.arrivalTime,
+                    burstTime: p.burstTime,
+                    completionTime: 0,
+                    turnaroundTime: 0,
+                    waitingTime: 0,
+                    responseTime: -1
+                };
+            });
+
+            // Calculate completion time and response time
+            schedule.forEach(entry => {
+                const pm = processMetrics[entry.processId];
+                pm.completionTime = Math.max(pm.completionTime, entry.endTime);
+                
+                if (pm.responseTime === -1) {
+                    pm.responseTime = entry.startTime - pm.arrivalTime;
+                }
+            });
+
+            // Calculate turnaround and waiting time
+            Object.values(processMetrics).forEach(pm => {
+                pm.turnaroundTime = pm.completionTime - pm.arrivalTime;
+                pm.waitingTime = pm.turnaroundTime - pm.burstTime;
+            });
+
+            // Calculate averages
+            const count = processList.length;
+            metrics.avgWaitingTime = Object.values(processMetrics).reduce((sum, pm) => sum + pm.waitingTime, 0) / count;
+            metrics.avgTurnaroundTime = Object.values(processMetrics).reduce((sum, pm) => sum + pm.turnaroundTime, 0) / count;
+            metrics.avgResponseTime = Object.values(processMetrics).reduce((sum, pm) => sum + pm.responseTime, 0) / count;
+            
+            // Calculate CPU utilization
+            const totalTime = Math.max(...schedule.map(e => e.endTime));
+            const busyTime = schedule.reduce((sum, e) => sum + (e.endTime - e.startTime), 0);
+            metrics.cpuUtilization = (busyTime / totalTime) * 100;
+            
+            // Calculate throughput
+            metrics.throughput = count / totalTime;
+
+            metrics.processMetrics = processMetrics;
+            metrics.totalTime = totalTime;
+
+            return metrics;
+        }
+
+        function displayResults(schedule, metrics) {
+            // Show sections
+            document.getElementById('visualizationSection').style.display = 'block';
+            document.getElementById('metricsSection').style.display = 'block';
+
+            // Display Gantt chart
+            displayGanttChart(schedule, metrics.totalTime);
+
+            // Display metrics
+            displayMetrics(metrics);
+
+            // Setup timeline slider
+            const slider = document.getElementById('timeSlider');
+            slider.max = metrics.totalTime;
+            slider.value = 0;
+            updateTimeVisualization(0);
+        }
+
+        function displayGanttChart(schedule, totalTime) {
+            const ganttChart = document.getElementById('ganttChart');
+            const timeline = document.getElementById('timeline');
+            
+            // Clear previous content
+            ganttChart.innerHTML = '<div class="current-time-indicator" id="timeIndicator"></div>';
+            timeline.innerHTML = '';
+
+            // Calculate scale
+            const pixelsPerUnit = 50;
+            const totalWidth = totalTime * pixelsPerUnit;
+
+            // Create gantt blocks
+            schedule.forEach(entry => {
+                const block = document.createElement('div');
+                block.className = 'gantt-block';
+                block.style.left = `${entry.startTime * pixelsPerUnit}px`;
+                block.style.width = `${(entry.endTime - entry.startTime) * pixelsPerUnit}px`;
+                block.style.backgroundColor = generateProcessColor(entry.processId);
+                block.textContent = entry.processId;
+                block.style.position = 'absolute';
+                ganttChart.appendChild(block);
+            });
+
+            // Create timeline
+            for (let i = 0; i <= totalTime; i++) {
+                const mark = document.createElement('div');
+                mark.className = 'timeline-mark';
+                mark.style.left = `${i * pixelsPerUnit}px`;
+                mark.textContent = i;
+                timeline.appendChild(mark);
+            }
+
+            ganttChart.style.width = `${totalWidth}px`;
+            timeline.style.width = `${totalWidth}px`;
+
+            // Display color legend
+            displayColorLegend();
+        }
+
+        function displayColorLegend() {
+            const container = document.getElementById('processColors');
+            container.innerHTML = '';
+
+            Object.entries(processColors).forEach(([processId, color]) => {
+                const legend = document.createElement('div');
+                legend.className = 'color-legend';
+                legend.innerHTML = `
+                    <div class="color-box" style="background-color: ${color}"></div>
+                    <span>${processId}</span>
+                `;
+                container.appendChild(legend);
+            });
+        }
+
+        function updateTimeVisualization(time) {
+            document.getElementById('currentTime').textContent = time;
+            const indicator = document.getElementById('timeIndicator');
+            const pixelsPerUnit = 50;
+            indicator.style.left = `${time * pixelsPerUnit}px`;
+        }
+
+        function displayMetrics(metrics) {
+            // Display summary metrics
+            const metricsContainer = document.getElementById('metrics');
+            metricsContainer.innerHTML = `
+                <div class="metric-card">
+                    <h3>Average Waiting Time</h3>
+                    <div class="value">${metrics.avgWaitingTime.toFixed(2)}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Average Turnaround Time</h3>
+                    <div class="value">${metrics.avgTurnaroundTime.toFixed(2)}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Average Response Time</h3>
+                    <div class="value">${metrics.avgResponseTime.toFixed(2)}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>CPU Utilization</h3>
+                    <div class="value">${metrics.cpuUtilization.toFixed(1)}%</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Throughput</h3>
+                    <div class="value">${metrics.throughput.toFixed(3)}</div>
+                </div>
+            `;
+
+            // Display detailed metrics table
+            const tbody = document.getElementById('detailedMetricsBody');
+            tbody.innerHTML = '';
+
+            Object.entries(metrics.processMetrics).forEach(([processId, pm]) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${processId}</td>
+                    <td>${pm.arrivalTime}</td>
+                    <td>${pm.burstTime}</td>
+                    <td>${pm.completionTime}</td>
+                    <td>${pm.turnaroundTime}</td>
+                    <td>${pm.waitingTime}</td>
+                    <td>${pm.responseTime}</td>
+                `;
+            });
+        }
+
+        function runAllAlgorithms() {
+            const quantum = parseInt(document.getElementById('quantum').value) || 2;
+            const algorithms = [
+                { name: 'FCFS', schedule: fcfs([...processes]) },
+                { name: 'SJF (Non-Preemptive)', schedule: sjfNonPreemptive([...processes]) },
+                                { name: 'SJF (Preemptive)', schedule: sjfPreemptive([...processes]) },
+                { name: 'Priority (Non-Preemptive)', schedule: priorityNonPreemptive([...processes]) },
+                { name: 'Priority (Preemptive)', schedule: priorityPreemptive([...processes]) },
+                { name: `Round Robin (Q=${quantum})`, schedule: roundRobin([...processes], quantum) }
+            ];
+
+            const comparisonData = [];
+
+            algorithms.forEach(algo => {
+                const metrics = calculateMetrics(algo.schedule, [...processes]);
+                comparisonData.push({
+                    name: algo.name,
+                    avgWaitingTime: metrics.avgWaitingTime,
+                    avgTurnaroundTime: metrics.avgTurnaroundTime,
+                    avgResponseTime: metrics.avgResponseTime,
+                    cpuUtilization: metrics.cpuUtilization,
+                    throughput: metrics.throughput
+                });
+            });
+
+            displayComparison(comparisonData);
+        }
+
+        function displayComparison(comparisonData) {
+            document.getElementById('comparisonSection').style.display = 'block';
+            const tbody = document.getElementById('comparisonTableBody');
+            tbody.innerHTML = '';
+
+            comparisonData.forEach(data => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${data.name}</td>
+                    <td>${data.avgWaitingTime.toFixed(2)}</td>
+                    <td>${data.avgTurnaroundTime.toFixed(2)}</td>
+                    <td>${data.avgResponseTime.toFixed(2)}</td>
+                    <td>${data.cpuUtilization.toFixed(1)}%</td>
+                    <td>${data.throughput.toFixed(3)}</td>
+                `;
+            });
+        }
+
+        function saveProcesses() {
+            if (processes.length === 0) {
+                alert('No processes to save');
+                return;
+            }
+
+            const dataStr = JSON.stringify(processes, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'processes.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadProcesses(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedProcesses = JSON.parse(e.target.result);
+                    if (Array.isArray(loadedProcesses)) {
+                        processes = loadedProcesses.map(p => ({
+                            id: p.id,
+                            arrivalTime: p.arrivalTime,
+                            burstTime: p.burstTime,
+                            priority: p.priority || 1,
+                            remainingTime: p.burstTime
+                        }));
+                        updateProcessTable();
+                        alert('Processes loaded successfully');
+                    } else {
+                        alert('Invalid file format');
+                    }
+                } catch (error) {
+                    alert('Error loading file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Add some example processes on load
+        window.onload = function() {
+            // Example processes
+            const exampleProcesses = [
+                { id: 'P1', arrivalTime: 0, burstTime: 6, priority: 2 },
+                { id: 'P2', arrivalTime: 2, burstTime: 8, priority: 1 },
+                { id: 'P3', arrivalTime: 4, burstTime: 7, priority: 3 },
+                { id: 'P4', arrivalTime: 6, burstTime: 3, priority: 4 }
+            ];
+
+            exampleProcesses.forEach(p => {
+                processes.push({...p, remainingTime: p.burstTime});
+            });
+
+            updateProcessTable();
+        };
+    </script>
+</body>
+</html>
